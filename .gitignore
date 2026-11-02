@@ -40,3 +40,6 @@ Thumbs.db
 
 # Sandbox run artifacts
 sandbox/runs/
+
+# Local review screenshots
+/screenshots/
