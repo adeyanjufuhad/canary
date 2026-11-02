@@ -15,7 +15,9 @@ export default function WaitlistForm() {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const email = String(new FormData(e.currentTarget).get("email") ?? "").trim();
+    const data = new FormData(e.currentTarget);
+    const email = String(data.get("email") ?? "").trim();
+    const company = String(data.get("company") ?? "");
     if (!EMAIL.test(email)) {
       setStatus("invalid");
       inputRef.current?.focus();
@@ -27,7 +29,7 @@ export default function WaitlistForm() {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, company }),
       });
       if (res.ok) {
         const { status: result } = (await res.json()) as { status?: string };
@@ -45,7 +47,11 @@ export default function WaitlistForm() {
   const message = { success: t.success, closed: t.closed, failed: t.failed } as Partial<Record<Status, string>>;
 
   return (
-    <form onSubmit={onSubmit} noValidate className="w-full">
+    <form onSubmit={onSubmit} noValidate className="relative w-full">
+      {/* honeypot for bots: hidden from people and assistive tech */}
+      <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+        <input type="text" name="company" tabIndex={-1} autoComplete="off" defaultValue="" />
+      </div>
       <div className="flex flex-col gap-2">
         <label htmlFor="waitlist-email" className="label text-ink">
           {t.label}
