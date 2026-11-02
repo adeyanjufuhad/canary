@@ -1,14 +1,234 @@
 # Canary
 
-**Your team writes the rules of your product in plain English in chat. Canary tries to break them on every PR.**
+**Your team writes the rules of your product in plain English, in chat. Canary tries to break them on every pull request.**
 
-Security scanners find SQL injection and XSS. They can't know that *a wallet can never go negative*, *a coupon works once per user*, or *a refund can't exceed the original charge*. Canary is for engineering and product teams anywhere. It puts two AI agents and your team in one [Switch](https://docs.switchagents.ai) room, in Slack, Microsoft Teams, Discord, or Mattermost:
+[Live site](https://canary-rust.vercel.app) · [How it works](#how-it-works) · [Architecture](#system-architecture) · [Run it locally](#run-the-landing-page-locally)
 
-- **`@canary-red`** reads each PR against your rules, writes an exploit per rule, runs it in a sandbox, and posts the evidence.
-- **`@canary-blue`** writes the fix, and Red re-runs its exploit against it.
-- **Humans** write the rules and rule on disputes. The room remembers every ruling.
+Security scanners find SQL injection and XSS. They can't know that *a wallet can never go below $0*, *a promo code works once per customer*, or *a refund can never be more than the original charge*. Only your team knows those rules.
 
-> 🚧 Work in progress for the **Flip the Switch** hackathon (WeMakeDevs × DevTools Academy × Switch, Nov 4–7, 2026). Quickstart, demo, and docs are on the way.
+Canary is for engineering and product teams anywhere. It puts two AI agents and your team in one [Switch](https://docs.switchagents.ai) room, in the chat app you already use: Slack, Microsoft Teams, Discord, or Mattermost.
+
+- **`@canary-red`** reads each pull request against your rules, writes an exploit for each rule, runs it in a sandbox, and posts the evidence.
+- **`@canary-blue`** writes the fix. Red runs its exploit again against the fix.
+- **Your team** writes the rules and makes the final call on disputes. The room remembers every ruling.
+
+> **Status:** work in progress for the **Flip the Switch** hackathon (WeMakeDevs × DevTools Academy × Switch, Nov 4–7, 2026). The landing page and waitlist are live. The agents, sandbox, and demo app are being built. See [Project status](#project-status).
+
+## How it works
+
+1. **Write a rule in chat.** One sentence that must always be true:
+   `@canary-red rule: A refund can never be more than the original charge.`
+2. **Open a pull request.** Canary reads the diff and finds the rules the change could affect.
+3. **Red tries to break them.** It writes an exploit for each rule, runs it in an isolated sandbox, and posts the requests and results in the room.
+4. **Blue fixes, your team decides.** Blue pushes a fix and a regression test to the pull request. Red runs the exploit again. A person on your team makes the final call, and the room saves the ruling so Canary never flags that case again.
+
+### Example: PR #42
+
+| Time (UTC) | Who | What happens |
+|---|---|---|
+| 09:12 | Amara (product) | Writes rule 1: a refund can never be more than the original charge. |
+| 14:02 | Lucas (backend) | Opens PR #42, *Split refunds into partial payments*. |
+| 14:05 | `@canary-red` | Sends 3 refunds of $1,500 at the same time against one $1,500 charge. All 3 succeed: **$4,500 refunded. Rule 1 broken.** |
+| 14:09 | `@canary-blue` | Pushes a fix (lock the charge, check the refund total before saving) and a regression test. |
+| 14:11 | `@canary-red` | Runs the exploit again: 1 refund succeeds, 2 are rejected with `409`. **Rule 1 holds.** |
+| 14:18 | Priya (engineering lead) | Rules that shipping fees count toward the total. Canary saves the ruling. |
+| 14:22 | Aiko (reviewer) | Approves and merges. |
+
+The bug never reached production.
+
+## System architecture
+
+Canary has two parts: the **product**, which lives in your chat app and your Git host, and the **landing page**, which is a separate website.
+
+### Product (planned for the hackathon)
+
+```mermaid
+flowchart TB
+    humans["Your team<br/>engineers and product people"]
+    chat["Chat app<br/>Slack · Microsoft Teams · Discord · Mattermost"]
+
+    subgraph room["Switch room #canary"]
+        direction LR
+        red["@canary-red<br/>breaks rules"]
+        memory[("Rules and rulings<br/>room memory")]
+        blue["@canary-blue<br/>writes fixes"]
+        red <--> memory <--> blue
+    end
+
+    gh["GitHub<br/>pull request"]
+
+    subgraph sandbox["Isolated sandbox"]
+        direction LR
+        app["PR build of the app<br/>demo: wallet API"]
+        db[("Postgres<br/>test data only")]
+        app --> db
+    end
+
+    humans <-->|"rules, evidence, rulings"| chat
+    chat <-->|"messages"| room
+    gh -->|"1 · PR opened or updated"| red
+    red -->|"2 · run exploits, re-test fixes"| app
+    blue -->|"3 · push fix + regression test"| gh
+```
+
+Both agents call the model provider you configure (Anthropic or OpenAI) with your own API key.
+
+| Component | Job | Status |
+|---|---|---|
+| Chat app | Where your team writes rules, reads evidence, and makes rulings. | Your existing workspace |
+| Switch room | Connects the agents to your chat app and keeps the room's memory of rules and rulings. | Planned |
+| `@canary-red` | Maps the PR diff to rules, writes exploits, runs them in the sandbox, posts evidence. | Planned |
+| `@canary-blue` | Writes the fix and a regression test, pushes them to the PR. | Planned |
+| Sandbox | Runs the PR's build against test data. Exploits never touch production. | Planned |
+| Demo wallet API | A small payments app with real business rules, for the demo. Money is stored as integer cents. | Planned |
+| Model providers | You bring your own Anthropic or OpenAI key. | Planned |
+
+### One pull request, step by step
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Team as Your team
+    participant Room as Switch room
+    participant Red as @canary-red
+    participant Blue as @canary-blue
+    participant GH as GitHub PR
+    participant SB as Sandbox
+
+    Team->>Room: rule: a refund can never be more than the charge
+    Room->>Red: save as rule 1
+    GH->>Red: PR #35;42 opened
+    Red->>Red: which rules can this diff affect?
+    Red->>SB: deploy PR build, send 3 parallel refunds
+    SB-->>Red: 3 x 201, $4,500 refunded
+    Red->>Room: rule 1 broken, with request log
+    Room->>Blue: fix rule 1 on PR #35;42
+    Blue->>GH: push fix + regression test
+    GH->>Red: PR #35;42 updated
+    Red->>SB: run the same exploit again
+    SB-->>Red: 1 x 201, 2 x 409
+    Red->>Room: rule 1 holds
+    Team->>Room: ruling: shipping counts toward the total
+    Room->>Red: ruling saved, never flag this case again
+```
+
+### Landing page (live)
+
+```mermaid
+flowchart LR
+    visitor["Visitor's browser"] -->|"HTTPS"| vercel["Vercel<br/>canary-rust.vercel.app"]
+    subgraph vercel_box["Vercel project: canary"]
+        page["Next.js 16 page<br/>prerendered, static"]
+        api["POST /api/waitlist<br/>serverless function"]
+    end
+    vercel --> page
+    vercel --> api
+    api -->|"@neondatabase/serverless<br/>over HTTPS"| neon[("Neon Postgres<br/>canary-web · us-east-1<br/>table: waitlist")]
+    github["GitHub main branch"] -->|"push = production deploy"| vercel
+```
+
+- The page is prerendered at build time. Only the waitlist sign-up runs on the server.
+- Sign-ups are unique per email, whatever the letter case. A repeat sign-up is ignored, and the reply never reveals whether an address is already listed.
+- A hidden honeypot field filters simple bots.
+- Every push to `main` deploys to production. Other branches get preview deployments.
+
+## Project status
+
+| Part | Status |
+|---|---|
+| Landing page ([canary-rust.vercel.app](https://canary-rust.vercel.app)) | Live |
+| Waitlist (Neon) | Live |
+| Demo wallet API and local Docker stack | Planned (Nov 4–7, 2026) |
+| `@canary-red` and `@canary-blue` on Switch | Planned (Nov 4–7, 2026) |
+| Sandbox runner | Planned (Nov 4–7, 2026) |
+| Full setup guide | Ships with the first release |
+
+## Repository layout
+
+```text
+canary/
+├── web/                         Landing page (Next.js 16, Tailwind CSS 4)
+│   ├── src/app/                 Page, layout, icons, POST /api/waitlist
+│   ├── src/components/          Hero, nav, footer, and one file per section
+│   │   ├── sections/            The gap, how it works, the room, rules, FAQ, waitlist…
+│   │   └── reactbits/           Vendored React Bits effects (kept identical to upstream)
+│   ├── src/content/en.ts        Every user-facing string, ready for translation
+│   ├── db/waitlist.sql          Waitlist table and unique email index
+│   └── public/hero/             Hero video loop (MP4 + WebM) and poster
+├── .env.example                 Every environment variable the project uses
+└── LICENSE                      MIT
+```
+
+## Run the landing page locally
+
+You need Node.js 20 or newer.
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Open http://localhost:3000.
+
+The waitlist works without a database. With no `DATABASE_URL`, sign-ups answer "Sign-ups aren't open yet". To store sign-ups locally:
+
+1. Create a Postgres database. [Neon](https://neon.tech) has a free tier.
+2. Run [`web/db/waitlist.sql`](web/db/waitlist.sql) against it.
+3. Put the connection string in `web/.env.local`:
+
+   ```bash
+   DATABASE_URL=postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require
+   ```
+
+Other commands, run from `web/`:
+
+| Command | What it does |
+|---|---|
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run lint` | ESLint |
+
+## Environment variables
+
+All of them are listed in [`.env.example`](.env.example). Never commit the real `.env` or `.env.local` files.
+
+| Variable | Used by | Purpose |
+|---|---|---|
+| `DATABASE_URL` | Landing page | Neon connection string for waitlist sign-ups |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Demo stack (planned) | Local Postgres for the demo wallet API |
+| `DEMO_API_PORT` | Demo stack (planned) | Port for the demo wallet API |
+| `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | Agents (planned) | Model providers. Bring your own keys. |
+| `GITHUB_TOKEN` | `@canary-blue` (planned) | Pushes the fix and regression test to the PR |
+
+## Deploying the landing page
+
+The landing page runs on [Vercel](https://vercel.com):
+
+1. Import the repository and set the **root directory** to `web`. Vercel detects Next.js.
+2. Add `DATABASE_URL` for the production and preview environments.
+3. Push to `main` to deploy.
+
+## Writing good rules
+
+- **One sentence that must always be true.** "A promo code works once per customer."
+- **Describe behavior, not code.** Say what customers can and can't do, not how a function works inside.
+- **Use real numbers.** "A team on the Starter plan has at most 5 seats" is easier to test than "seat limits are enforced".
+
+Common first rules:
+
+| Area | Rule |
+|---|---|
+| Wallets | A wallet balance can never go below $0. |
+| Promo codes | A promo code works once per customer. |
+| Refunds | A refund can never be more than the original charge. |
+| Seats | A team on the Starter plan has at most 5 seats. |
+| Free trials | Each organization gets one free trial. |
+| Inventory | Stock can never go below zero. |
+
+## Canary and security scanners
+
+Canary does not replace your security scanner. Run both. Scanners find known patterns like SQL injection, XSS, and known CVEs. Canary tests the rules that only your team knows, proves each break with a working exploit, and tests the fix again.
 
 ## License
 
