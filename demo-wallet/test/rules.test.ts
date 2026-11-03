@@ -99,6 +99,30 @@ describe("Rule 3: a refund can never be more than the original charge", () => {
     assert.equal((await api.get(`/charges/${charge}`)).body.refunded, 150_000);
     assert.equal((await api.get(`/customers/${customer}`)).body.balance, 150_000);
   });
+
+  // PR #8 made `amount` optional: left out, a refund pays whatever is still refundable. Red's exploit
+  // raced that read of the remaining balance, so race the split-refund paths the PR added as well.
+  test("race: 10 refunds with no amount at once, only 1 succeeds (the PR #8 exploit)", async () => {
+    const customer = await makeCustomer(api, 150_000);
+    const product = await makeProduct(db, 150_000, 5);
+    const charge = (await api.post("/charges", { customer, product })).body.id;
+    const results = await race(db, 10, () => api.post("/refunds", { charge }));
+    assert.equal(count(results, 201), 1);
+    assert.equal(count(results, 409), 9);
+    assert.equal((await api.get(`/charges/${charge}`)).body.refunded, 150_000);
+    assert.equal((await api.get(`/customers/${customer}`)).body.balance, 150_000);
+  });
+
+  test("race: 10 partial refunds of $200 on a $1,500 charge at once, only 7 fit", async () => {
+    const customer = await makeCustomer(api, 150_000);
+    const product = await makeProduct(db, 150_000, 5);
+    const charge = (await api.post("/charges", { customer, product })).body.id;
+    const results = await race(db, 10, () => api.post("/refunds", { charge, amount: 20_000 }));
+    assert.equal(count(results, 201), 7);
+    assert.equal(count(results, 409), 3);
+    assert.equal((await api.get(`/charges/${charge}`)).body.refunded, 140_000);
+    assert.equal((await api.get(`/customers/${customer}`)).body.balance, 140_000);
+  });
 });
 
 describe("Rule 4: stock can never go below zero", () => {
