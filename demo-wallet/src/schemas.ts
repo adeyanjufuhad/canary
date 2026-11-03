@@ -19,5 +19,6 @@ export const createCharge = z.object({
 
 export const createRefund = z.object({
   charge: z.string().startsWith("ch_"),
-  amount: cents,
+  // leave out to refund whatever is still refundable on the charge
+  amount: cents.optional(),
 });
