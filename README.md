@@ -12,7 +12,7 @@ Canary is for engineering and product teams anywhere. It puts two AI agents and 
 - **`@canary-blue`** writes the fix. Red runs its exploit again against the fix.
 - **Your team** writes the rules and makes the final call on disputes. The room remembers every ruling.
 
-> **Status:** work in progress for the **Flip the Switch** hackathon (WeMakeDevs × DevTools Academy × Switch, Nov 4–7, 2026). The landing page and waitlist are live. The agents, sandbox, and demo app are being built. See [Project status](#project-status).
+> **Status:** built for the **Flip the Switch** hackathon (WeMakeDevs × DevTools Academy × Switch, Nov 4–7, 2026). The landing page and waitlist are live, and the full loop has run end to end on a real pull request: the watcher announced it, Red broke a rule, Blue fixed it, and Red confirmed the fix. See [Project status](#project-status).
 
 ## How it works
 
@@ -40,7 +40,7 @@ The bug never reached production.
 
 Canary has two parts: the **product**, which lives in your chat app and your Git host, and the **landing page**, which is a separate website.
 
-### Product (planned for the hackathon)
+### Product
 
 ```mermaid
 flowchart TB
@@ -139,11 +139,12 @@ flowchart LR
 | Landing page ([canary-rust.vercel.app](https://canary-rust.vercel.app)) | Live |
 | Waitlist (Neon) | Live |
 | Demo wallet API ([demo-wallet/](demo-wallet/)) | Built and tested |
-| Local Docker stack (`docker-compose.yml`) | Written, not yet run |
+| Local Docker stack (`docker-compose.yml`) | Written, not yet run. Optional: the demo does not need it |
 | Agent tooling: instructions, exploits, PR watcher ([agents/](agents/)) | Built; exploits tested against a real bug |
 | `@canary-red` and `@canary-blue` running on Switch, in Slack | Running: rule 1 saved from Slack |
 | Sandbox runner | Built and tested |
-| Full setup guide | Ships with the first release |
+| Setup guide for the agents | [agents/README.md](agents/README.md) |
+| Full pull request round trip (watcher, Red, Blue, Red again) | Verified on a real pull request |
 
 ## Repository layout
 
