@@ -80,7 +80,7 @@ Both agents call the model provider you configure (Anthropic or OpenAI) with you
 | `@canary-red` | Maps the PR diff to rules, writes exploits, runs them in the sandbox, posts evidence. | Planned |
 | `@canary-blue` | Writes the fix and a regression test, pushes them to the PR. | Planned |
 | Sandbox | Runs the PR's build against test data. Exploits never touch production. | Planned |
-| Demo wallet API | A small payments app with real business rules, for the demo. Money is stored as integer cents. | Planned |
+| Demo wallet API | A small payments app with four business rules, for the demo. Money is stored as integer cents. See [demo-wallet/](demo-wallet/). | Built |
 | Model providers | You bring your own Anthropic or OpenAI key. | Planned |
 
 ### One pull request, step by step
@@ -138,7 +138,8 @@ flowchart LR
 |---|---|
 | Landing page ([canary-rust.vercel.app](https://canary-rust.vercel.app)) | Live |
 | Waitlist (Neon) | Live |
-| Demo wallet API and local Docker stack | Planned (Nov 4–7, 2026) |
+| Demo wallet API ([demo-wallet/](demo-wallet/)) | Built and tested |
+| Local Docker stack (`docker-compose.yml`) | Written, not yet run |
 | `@canary-red` and `@canary-blue` on Switch | Planned (Nov 4–7, 2026) |
 | Sandbox runner | Planned (Nov 4–7, 2026) |
 | Full setup guide | Ships with the first release |
@@ -155,6 +156,11 @@ canary/
 │   ├── src/content/en.ts        Every user-facing string, ready for translation
 │   ├── db/waitlist.sql          Waitlist table and unique email index
 │   └── public/hero/             Hero video loop (MP4 + WebM) and poster
+├── demo-wallet/                 The app Canary attacks in the demo (Node.js, Hono, Postgres)
+│   ├── src/app.ts               Routes and the four business-rule checks
+│   ├── test/rules.test.ts       Rule tests, including race attacks
+│   └── RULES.md                 The rules in plain English
+├── docker-compose.yml           Local Postgres + demo wallet API
 ├── .env.example                 Every environment variable the project uses
 └── LICENSE                      MIT
 ```
@@ -196,10 +202,32 @@ All of them are listed in [`.env.example`](.env.example). Never commit the real 
 | Variable | Used by | Purpose |
 |---|---|---|
 | `DATABASE_URL` | Landing page | Neon connection string for waitlist sign-ups |
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Demo stack (planned) | Local Postgres for the demo wallet API |
-| `DEMO_API_PORT` | Demo stack (planned) | Port for the demo wallet API |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `docker-compose.yml` | Local Postgres for the demo wallet API |
+| `DEMO_API_PORT` | `docker-compose.yml` | Port for the demo wallet API on localhost |
+
+The demo wallet API also has its own [`demo-wallet/.env.example`](demo-wallet/.env.example) for running it without Docker (`DATABASE_URL`, `TEST_DATABASE_URL`, `PORT`).
 | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | Agents (planned) | Model providers. Bring your own keys. |
 | `GITHUB_TOKEN` | `@canary-blue` (planned) | Pushes the fix and regression test to the PR |
+
+## Run the demo wallet API
+
+The app Canary attacks in the demo. Full details are in [demo-wallet/README.md](demo-wallet/README.md).
+
+```bash
+docker compose up --build
+```
+
+Or without Docker, with any Postgres database:
+
+```bash
+cd demo-wallet
+npm install
+cp .env.example .env
+npm run db:setup
+npm run dev
+```
+
+The API runs on http://localhost:4000. `npm test` runs the rule tests, including race attacks that send many requests at the same moment.
 
 ## Deploying the landing page
 

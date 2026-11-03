@@ -1,0 +1,33 @@
+# Local demo stack: Postgres + the demo wallet API. Reads POSTGRES_* and DEMO_API_PORT from .env.
+# The API has no authentication, so it is published on localhost only.
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-canary}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-demo_wallet}
+    volumes:
+      - demo-wallet-data:/var/lib/postgresql
+      # Runs once, on the first start with an empty volume
+      - ./demo-wallet/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./demo-wallet/db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./demo-wallet
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-canary}:${POSTGRES_PASSWORD:-change-me}@db:5432/${POSTGRES_DB:-demo_wallet}
+      PORT: "4000"
+    ports:
+      - "127.0.0.1:${DEMO_API_PORT:-4000}:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  demo-wallet-data:
