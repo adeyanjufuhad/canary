@@ -141,7 +141,7 @@ flowchart LR
 | Demo wallet API ([demo-wallet/](demo-wallet/)) | Built and tested |
 | Local Docker stack (`docker-compose.yml`) | Written, not yet run |
 | Agent tooling: instructions, exploits, PR watcher ([agents/](agents/)) | Built; exploits tested against a real bug |
-| `@canary-red` and `@canary-blue` running on Switch | Next: needs the Switch server and Slack set up |
+| `@canary-red` and `@canary-blue` running on Switch, in Slack | Running: rule 1 saved from Slack |
 | Sandbox runner | Built and tested |
 | Full setup guide | Ships with the first release |
 

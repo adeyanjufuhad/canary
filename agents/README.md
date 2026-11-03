@@ -9,11 +9,11 @@
 | `tools/sandbox.mjs` | Runs one pull request's build of the demo wallet API on `127.0.0.1:4100` against a freshly reset database. |
 | `tools/exploit.mjs` | Helpers for exploit scripts. Every request prints one evidence line in UTC. |
 | `exploits/rule-*.mjs` | One ready-made race attack per rule in [`demo-wallet/RULES.md`](../demo-wallet/RULES.md). |
-| `tools/pr-watcher.mjs` | Tells `@canary-red` in the room when a pull request opens or changes. |
+| `tools/pr-watcher.mjs` | Tells `@canary-red` in the room when a pull request opens or changes, posting as its own agent, `canary-watch`. |
 
 ## How a pull request flows
 
-1. **PR watcher:** it checks GitHub every 30 seconds with `gh`. When a pull request opens or gets new commits, it posts `@canary-red PR #42 opened: …` into the room, using canary-blue's Switch credentials.
+1. **PR watcher:** it checks GitHub every 30 seconds with `gh`. When a pull request opens or gets new commits, it posts `@canary-red PR #42 opened: …` into the room as `canary-watch`, its own small Switch agent.
 2. **canary-red:**
    - starts the sandbox for that PR and reads the diff;
    - runs the exploits for the rules the change touches;
@@ -84,14 +84,30 @@ In Switch Console, go to **Your Agents → +** twice:
 | Bypass permissions | **Off** | **Off** |
 | Who can talk to your agent | Me and my agents (add teammates with Custom rules) | Me and my agents |
 
-The Directory can't be changed later. Then add both agents to the room, either with **Add to room** in Console or by typing `!invite-agent @canary-red` and `!invite-agent @canary-blue` in the channel.
+Then add both agents to the room, either with **Add to room** in Console or by typing `!invite-agent @canary-red` and `!invite-agent @canary-blue` in the channel. In Slack these are chat messages, not terminal commands.
+
+**Check each agent's Directory.** In Switch Console 0.40, a new agent may start in a default folder under `~/.switch/agents/…` instead of the one you picked. Open the agent's ⚙ settings and, if needed, use **Choose…** next to Directory to select its `~/canary-agents/<name>` folder. Then ask it in a new chat: "What is your job, and which folder are you working in?" It should answer from its `CLAUDE.md`.
 
 ### 6. Start the PR watcher
 
-Create `~/canary-agents/.env.watcher` with the room's ID:
+The watcher tells `@canary-red` about pull requests. There are two ways for it to post into the room.
+
+**Slack, as you (use this with a local server).** A local server without Docker has no Gateway, so it has no page for creating registration keys. Instead, the watcher posts in the room's Slack channel with your own user token. Switch treats your linked account as the agents' owner, so Red accepts the message.
+
+1. **Add the scope.** In your Slack app, go to **OAuth & Permissions → User Token Scopes** and add `chat:write`. Then **Reinstall** the app.
+2. **Save the settings.** Copy the **User OAuth Token** (`xoxp-…`) into `~/canary-agents/.env.watcher`, together with the room's channel ID (the `C…` part of the channel's Slack web address):
+
+   ```bash
+   SLACK_USER_TOKEN=xoxp-…
+   SLACK_CHANNEL_ID=C…
+   ```
+
+**Through Switch, as its own agent (servers with a Gateway).** Create a registration key under **API Keys** in the Gateway, and put it in `.env.watcher` as `SWITCH_REGISTRATION_KEY`. Then run `node agents/tools/pr-watcher.mjs register` once, invite the new agent with `!invite-agent @canary-watch`, and set `SWITCH_ROOM_ID`.
+
+Test the route once. Red should reply in the thread:
 
 ```bash
-SWITCH_ROOM_ID=…
+node agents/tools/pr-watcher.mjs --test
 ```
 
 Then run it from the repository root and leave it running:
@@ -130,5 +146,6 @@ Canary runs code from pull requests. The Switch docs' own safety test applies he
 | Sandbox on `main`: all four exploits report the rule holds | Verified |
 | Sandbox on a branch with the refund lock removed: the 3-refund exploit reports $4,500 refunded on a $1,500 charge (3 of 3 runs) | Verified |
 | PR watcher reads open pull requests from GitHub and formats the messages (`--dry-run`) | Verified |
-| PR watcher posting into a Switch room | Not yet: needs your Switch server |
-| canary-red and canary-blue running in Switch | Not yet: needs your Switch server |
+| PR watcher posting into the room (Slack route): Red replies to the test message | Verified |
+| canary-red and canary-blue running in Switch and Slack: Red saves rule 1 from a Slack message | Verified |
+| Full pull request round trip (Red finds, Blue fixes, Red re-tests) | Next |
