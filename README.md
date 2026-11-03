@@ -1,8 +1,21 @@
-# Canary
+<p align="center">
+  <img src="web/src/app/icon.svg" alt="Canary logo: a yellow canary on a black square" width="112" height="112">
+</p>
+
+<h1 align="center">Canary</h1>
+
+<p align="center">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white">
+  <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black">
+  <img alt="Node.js 20+" src="https://img.shields.io/badge/Node.js-20%2B-5FA04E?logo=nodedotjs&logoColor=white">
+  <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white">
+  <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-FFD60A">
+</p>
 
 **Your team writes the rules of your product in plain English, in chat. Canary tries to break them on every pull request.**
 
-[Live site](https://canary-rust.vercel.app) · [How it works](#how-it-works) · [Architecture](#system-architecture) · [Run it locally](#run-the-landing-page-locally)
+[Live site](https://canary-rust.vercel.app) · [How it works](#how-it-works) · [Tech stack](#tech-stack) · [Architecture](#system-architecture) · [Run it locally](#run-the-landing-page-locally)
 
 Security scanners find SQL injection and XSS. They can't know that *a wallet can never go below $0*, *a promo code works once per customer*, or *a refund can never be more than the original charge*. Only your team knows those rules.
 
@@ -35,6 +48,30 @@ Canary is for engineering and product teams anywhere. It puts two AI agents and 
 | 14:22 | Aiko (reviewer) | Approves and merges. |
 
 The bug never reached production.
+
+## Tech stack
+
+### Languages
+
+| Language | Where it is used |
+|---|---|
+| TypeScript | Landing page (`web/`) and the demo wallet API (`demo-wallet/`) |
+| JavaScript (Node.js ES modules) | Agent tools: PR watcher, sandbox runner, exploits (`agents/`) |
+| SQL | Database schema and seed data (`demo-wallet/db/`, `web/db/`) |
+| CSS | Landing page styles, with Tailwind CSS (`web/src/app/globals.css`) |
+| YAML | Local Docker stack (`docker-compose.yml`) |
+
+### Stack
+
+| Part | Built with |
+|---|---|
+| Agents | [Claude Code](https://claude.com/claude-code) sessions (`@canary-red`, `@canary-blue`), run by [Switch Console](https://docs.switchagents.ai) |
+| Chat | Slack today, through Switch. Switch also connects Microsoft Teams, Discord, and Mattermost |
+| PR watcher and sandbox | Node.js 20+, the [GitHub CLI](https://cli.github.com) (`gh`), Git |
+| Demo wallet API | Node.js, [Hono](https://hono.dev), [Zod](https://zod.dev), `pg`, PostgreSQL; tests with the Node.js test runner and `tsx` |
+| Landing page | [Next.js 16](https://nextjs.org) (App Router, Turbopack), React 19, Tailwind CSS 4, GSAP, Motion, React Bits effects |
+| Hosting | [Vercel](https://vercel.com) for the landing page; [Neon](https://neon.tech) Postgres for the old waitlist table |
+| Local stack (optional) | Docker Compose: PostgreSQL 18 and the demo wallet API on Node.js 22 |
 
 ## System architecture
 
