@@ -76,10 +76,10 @@ Both agents call the model provider you configure (Anthropic or OpenAI) with you
 | Component | Job | Status |
 |---|---|---|
 | Chat app | Where your team writes rules, reads evidence, and makes rulings. | Your existing workspace |
-| Switch room | Connects the agents to your chat app and keeps the room's memory of rules and rulings. | Planned |
-| `@canary-red` | Maps the PR diff to rules, writes exploits, runs them in the sandbox, posts evidence. | Planned |
-| `@canary-blue` | Writes the fix and a regression test, pushes them to the PR. | Planned |
-| Sandbox | Runs the PR's build against test data. Exploits never touch production. | Planned |
+| Switch room | Connects the agents to your chat app and keeps the room's memory of rules and rulings. | Setup guide in [agents/](agents/) |
+| `@canary-red` | Maps the PR diff to rules, writes exploits, runs them in the sandbox, posts evidence. | Instructions and exploits built |
+| `@canary-blue` | Writes the fix and a regression test, pushes them to the PR. | Instructions built |
+| Sandbox | Runs the PR's build on 127.0.0.1 against a freshly reset database. Exploits never touch production. | Built and tested |
 | Demo wallet API | A small payments app with four business rules, for the demo. Money is stored as integer cents. See [demo-wallet/](demo-wallet/). | Built |
 | Model providers | You bring your own Anthropic or OpenAI key. | Planned |
 
@@ -140,8 +140,9 @@ flowchart LR
 | Waitlist (Neon) | Live |
 | Demo wallet API ([demo-wallet/](demo-wallet/)) | Built and tested |
 | Local Docker stack (`docker-compose.yml`) | Written, not yet run |
-| `@canary-red` and `@canary-blue` on Switch | Planned (Nov 4–7, 2026) |
-| Sandbox runner | Planned (Nov 4–7, 2026) |
+| Agent tooling: instructions, exploits, PR watcher ([agents/](agents/)) | Built; exploits tested against a real bug |
+| `@canary-red` and `@canary-blue` running on Switch | Next: needs the Switch server and Slack set up |
+| Sandbox runner | Built and tested |
 | Full setup guide | Ships with the first release |
 
 ## Repository layout
@@ -160,6 +161,7 @@ canary/
 │   ├── src/app.ts               Routes and the four business-rule checks
 │   ├── test/rules.test.ts       Rule tests, including race attacks
 │   └── RULES.md                 The rules in plain English
+├── agents/                      canary-red and canary-blue: instructions, sandbox, exploits, PR watcher
 ├── docker-compose.yml           Local Postgres + demo wallet API
 ├── .env.example                 Every environment variable the project uses
 └── LICENSE                      MIT
