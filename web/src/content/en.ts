@@ -281,7 +281,8 @@ export const en = {
   quickstart: {
     eyebrow: "/06 — Quickstart",
     title: "Run Canary on your own repo.",
-    intro: "Canary is open source and in active development. The full setup guide ships with the first release.",
+    intro:
+      "Canary is open source. You need Node.js 20+, Git, the GitHub CLI, and a chat workspace where you can install an app. The full guide is in agents/README.md in the repo.",
     copy: "Copy",
     copied: "Copied",
     steps: [
@@ -291,21 +292,34 @@ export const en = {
         code: "git clone https://github.com/adeyanjufuhad/canary.git\ncd canary",
       },
       {
-        title: "Add your keys",
+        title: "Start Switch on your computer",
+        lang: "",
+        code: "",
+        note: "Install Switch Console, then choose Add a server → Run a server on this computer. Switch connects the agents to your chat app.",
+      },
+      {
+        title: "Connect your chat app",
+        lang: "",
+        code: "",
+        note: "Create a chat app from the Switch guide, connect it in Switch Console, and link your own account. Then make a channel, such as #canary, and invite Switch to it.",
+      },
+      {
+        title: "Add the two agents",
         lang: "bash",
-        code: "cp .env.example .env",
-        note: "Add a model API key and a GitHub token. The real .env file never leaves your machine.",
+        code: "node agents/setup-dirs.mjs",
+        note: "This makes a working folder for canary-red and canary-blue. In Switch Console, add both agents, pick each one’s folder, and invite them to the channel.",
       },
       {
         title: "Write your first rule in chat",
         lang: "chat",
         code: "@canary-red rule: A wallet balance can never go below $0.",
+        note: "Red saves the rule and numbers it. Add one rule for each thing that must always be true.",
       },
       {
-        title: "Open a pull request",
-        lang: "",
-        code: "",
-        note: "Canary tests the change against every rule and posts the results in the room.",
+        title: "Start the watcher, then open a pull request",
+        lang: "bash",
+        code: "node agents/tools/pr-watcher.mjs",
+        note: "The watcher checks GitHub every 30 seconds and tells Red about new pull requests. Red tests each one and posts the results in the channel.",
       },
     ],
   },
@@ -320,7 +334,11 @@ export const en = {
       },
       {
         q: "Where do the exploits run?",
-        a: "In an isolated sandbox with a copy of your app and test data. Canary never runs exploits against production.",
+        a: "In a sandbox: the pull request’s build of your app, with a test database that is reset before every run. Canary never runs exploits against production. Today the sandbox runs on your own computer, so only point Canary at pull requests from people you trust.",
+      },
+      {
+        q: "Can Canary find bugs nobody wrote a rule for?",
+        a: "No. Canary tests the rules your team writes. Keep your scanner and your tests for everything else, and add a rule whenever your team agrees on something that must always be true.",
       },
       {
         q: "Which chat apps does it work with?",
@@ -336,7 +354,7 @@ export const en = {
       },
       {
         q: "Is Canary free?",
-        a: "Canary is open source under the MIT license. You bring your own model API keys, so you only pay your model provider for what you use.",
+        a: "Canary is open source under the MIT license. The agents run on your own AI model account, so you only pay your model provider for what you use.",
       },
     ],
   },
