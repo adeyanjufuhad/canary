@@ -2,7 +2,6 @@ import { en } from "@/content/en";
 import { GITHUB_URL } from "@/lib/site";
 import CanaryMark from "./CanaryMark";
 import MobileMenu from "./MobileMenu";
-import StatusStrip from "./StatusStrip";
 
 const t = en.nav;
 const cell = "flex items-center px-4 md:px-5 border-r border-ink";
@@ -42,14 +41,13 @@ export default function Nav() {
           </a>
           <MobileMenu />
           <a
-            href="#waitlist"
+            href="#get-started"
             className="flex items-center px-4 md:px-6 border-l border-ink bg-canary label text-ink font-semibold hover:bg-ink hover:text-canary transition-colors"
           >
-            {t.waitlist}
+            {t.getStarted}
           </a>
         </div>
       </nav>
-      <StatusStrip />
     </header>
   );
 }

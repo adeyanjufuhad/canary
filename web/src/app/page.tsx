@@ -4,12 +4,12 @@ import Nav from "@/components/Nav";
 import Noise from "@/components/reactbits/Noise";
 import Faq from "@/components/sections/Faq";
 import Gap from "@/components/sections/Gap";
+import GetStarted from "@/components/sections/GetStarted";
 import HowItWorks from "@/components/sections/HowItWorks";
 import Quickstart from "@/components/sections/Quickstart";
 import Room from "@/components/sections/Room";
 import Rules from "@/components/sections/Rules";
 import Versus from "@/components/sections/Versus";
-import Waitlist from "@/components/sections/Waitlist";
 import { en } from "@/content/en";
 
 export default function Home() {
@@ -36,7 +36,7 @@ export default function Home() {
         <Versus />
         <Quickstart />
         <Faq />
-        <Waitlist />
+        <GetStarted />
       </main>
       <Footer />
     </>

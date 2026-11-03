@@ -25,20 +25,9 @@ export const en = {
       { href: "#faq", label: "FAQ" },
     ],
     github: "GitHub",
-    waitlist: "Join Waitlist",
+    getStarted: "Get Started",
     menuOpen: "Menu",
     menuLabel: "Open the menu",
-  },
-
-  status: {
-    live: "Live",
-    room: "Room #canary",
-    rules: "Rules 03",
-    lastPr: "Last PR #42: rule 1",
-    broken: "broken",
-    then: "then",
-    fixed: "fixed",
-    timezone: "UTC",
   },
 
   hero: {
@@ -359,20 +348,12 @@ export const en = {
     ],
   },
 
-  waitlist: {
-    eyebrow: "/08 — Early access",
-    title: "Be first to test your rules.",
-    body: "Get one email when the first release is ready. Nothing else.",
-    label: "Work email",
-    placeholder: "name@company.com…",
-    hint: "One email when the first release is ready.",
-    submit: "Join Waitlist",
-    submitting: "Joining…",
-    success: "You’re on the list. Watch your inbox for the release email.",
-    invalid: "Enter a valid email address, like name@company.com.",
-    closed: "Sign-ups aren’t open yet. Star the repo on GitHub to follow progress.",
-    failed: "Something went wrong. Try again in a minute.",
-    star: "Star on GitHub",
+  getStarted: {
+    eyebrow: "/08 — Get started",
+    title: "Try Canary on your own repo.",
+    body: "Canary is open source under the MIT license. Clone it, connect your chat app, and write your first rule today.",
+    github: "View on GitHub",
+    guide: "Read the setup guide",
   },
 
   footer: {
@@ -393,7 +374,6 @@ export const en = {
         links: [
           { href: "#quickstart", label: "Quickstart" },
           { href: "#faq", label: "FAQ" },
-          { href: "#waitlist", label: "Join Waitlist" },
         ],
       },
       {
