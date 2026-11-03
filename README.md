@@ -12,7 +12,7 @@ Canary is for engineering and product teams anywhere. It puts two AI agents and 
 - **`@canary-blue`** writes the fix. Red runs its exploit again against the fix.
 - **Your team** writes the rules and makes the final call on disputes. The room remembers every ruling.
 
-> **Status:** built for the **Flip the Switch** hackathon (WeMakeDevs × DevTools Academy × Switch, Nov 4–7, 2026). The landing page and waitlist are live, and the full loop has run end to end on a real pull request: the watcher announced it, Red broke a rule, Blue fixed it, and Red confirmed the fix. See [Project status](#project-status).
+> **Status:** built for the **Flip the Switch** hackathon (WeMakeDevs × DevTools Academy × Switch, Nov 4–7, 2026). The landing page is live, and the full loop has run end to end on a real pull request: the watcher announced it, Red broke a rule, Blue fixed it, and Red confirmed the fix. See [Project status](#project-status).
 
 ## How it works
 
