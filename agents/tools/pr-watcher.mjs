@@ -171,7 +171,8 @@ if (flag("test")) {
   process.exit();
 }
 let seen = existsSync(stateFile) ? JSON.parse(readFileSync(stateFile, "utf8")) : null;
-const firstRun = seen === null;
+// true only for the very first poll with no saved state; later polls announce everything new
+let firstRun = seen === null;
 seen ??= {};
 
 log(`watching ${repo} every ${pollSeconds}s${dryRun ? " (dry run)" : ""}`);
@@ -183,8 +184,8 @@ while (true) {
       if (pr.draft) continue;
       const before = seen[pr.number];
       if (before === pr.sha) continue;
-      seen[pr.number] = pr.sha;
       if (firstRun && before === undefined && !flag("announce-existing")) {
+        seen[pr.number] = pr.sha;
         log(`already open, not announced: PR #${pr.number} (${pr.sha.slice(0, 7)})`);
         continue;
       }
@@ -194,10 +195,13 @@ while (true) {
           ? `@canary-red PR #${pr.number} opened: ${pr.title} by ${pr.author} (${pr.url}, head ${head})`
           : `@canary-red PR #${pr.number} updated: new head ${head} (${pr.url})`;
       await post(content, settings);
+      // only after a successful post, so a failed one is retried on the next poll
+      seen[pr.number] = pr.sha;
     }
     const open = new Set(prs.map((pr) => String(pr.number)));
     for (const number of Object.keys(seen)) if (!open.has(number)) delete seen[number];
     if (!dryRun) writeFileSync(stateFile, JSON.stringify(seen, null, 2));
+    firstRun = false;
   } catch (error) {
     log(`error: ${error.message}`);
   }
