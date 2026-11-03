@@ -1,0 +1,9 @@
+# Keep text files LF in the repository and in every checkout, on any OS.
+* text=auto eol=lf
+
+# Binary assets: never touch line endings or diff them as text.
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.mp4  binary
+*.webm binary
