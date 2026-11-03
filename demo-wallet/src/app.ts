@@ -215,25 +215,34 @@ export function createApp(db: Db) {
 
   // ---- Refunds ----
 
+  /** What is still refundable on a charge, so a refund can be split into several partial payments. */
+  async function refundable(chargeId: string) {
+    const { rows } = await db.query<Charge>("SELECT * FROM charges WHERE id = $1", [chargeId]);
+    if (!rows[0]) throw notFound("charge", chargeId);
+    return { charge: rows[0], remaining: rows[0].amount - rows[0].refunded };
+  }
+
   // Rule 3: a refund can never be more than the original charge (all refunds on a charge combined).
+  // Refunds can be split into partial payments; without an amount, the remaining balance is refunded.
   app.post("/refunds", async (c) => {
     const input = await body(c, schemas.createRefund);
+    const { charge, remaining } = await refundable(input.charge);
+    const amount = input.amount ?? remaining;
+    if (amount <= 0 || amount > remaining) {
+      throw ruleViolation(
+        "refund_exceeds_charge",
+        `This charge is ${charge.amount} cents and ${charge.refunded} cents are already refunded.`,
+      );
+    }
     const refund = await withTx(db, async (tx) => {
-      const charge = await lockRow<Charge>(tx, "SELECT * FROM charges WHERE id = $1", input.charge, "charge");
-      if (charge.refunded + input.amount > charge.amount) {
-        throw ruleViolation(
-          "refund_exceeds_charge",
-          `This charge is ${charge.amount} cents and ${charge.refunded} cents are already refunded.`,
-        );
-      }
       const id = newId("re");
-      await tx.query("UPDATE charges SET refunded = refunded + $2 WHERE id = $1", [charge.id, input.amount]);
-      await tx.query("UPDATE customers SET balance = balance + $2 WHERE id = $1", [charge.customer_id, input.amount]);
+      await tx.query("UPDATE charges SET refunded = refunded + $2 WHERE id = $1", [charge.id, amount]);
+      await tx.query("UPDATE customers SET balance = balance + $2 WHERE id = $1", [charge.customer_id, amount]);
       const { rows } = await tx.query<{ id: string; charge_id: string; amount: number; created_at: Date }>(
         "INSERT INTO refunds (id, charge_id, amount) VALUES ($1, $2, $3) RETURNING *",
-        [id, charge.id, input.amount],
+        [id, charge.id, amount],
       );
-      await addLedgerEntry(tx, charge.customer_id, "refund", input.amount, id);
+      await addLedgerEntry(tx, charge.customer_id, "refund", amount, id);
       return rows[0]!;
     });
     return c.json(
