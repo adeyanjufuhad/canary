@@ -148,4 +148,4 @@ Canary runs code from pull requests. The Switch docs' own safety test applies he
 | PR watcher reads open pull requests from GitHub and formats the messages (`--dry-run`) | Verified |
 | PR watcher posting into the room (Slack route): Red replies to the test message | Verified |
 | canary-red and canary-blue running in Switch and Slack: Red saves rule 1 from a Slack message | Verified |
-| Full pull request round trip (Red finds, Blue fixes, Red re-tests) | Next |
+| Full pull request round trip: the watcher announced the PR, Red got $4,500 refunded on a $1,500 charge, Blue pushed a fix with a regression test, and Red re-tested with 1 refund of $1,500 | Verified |
