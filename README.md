@@ -15,7 +15,7 @@
 
 **Your team writes the rules of your product in plain English, in chat. Canary tries to break them on every pull request.**
 
-[Live site](https://canary-rust.vercel.app) · [How it works](#how-it-works) · [Tech stack](#tech-stack) · [Architecture](#system-architecture) · [Run it locally](#run-the-landing-page-locally)
+[Live site](https://canary-rust.vercel.app) · [How it works](#how-it-works) · [How Canary uses Switch](#how-canary-uses-switch) · [Tech stack](#tech-stack) · [Architecture](#system-architecture) · [Run it locally](#run-the-landing-page-locally)
 
 Security scanners find SQL injection and XSS. They can't know that *a wallet can never go below $0*, *a promo code works once per customer*, or *a refund can never be more than the original charge*. Only your team knows those rules.
 
@@ -48,6 +48,37 @@ Canary is for engineering and product teams anywhere. It puts two AI agents and 
 | 14:22 | Aiko (reviewer) | Approves and merges. |
 
 The bug never reached production.
+
+## How Canary uses Switch
+
+Switch is what turns two Claude Code sessions into teammates. It runs the agents, connects them to the team's chat, and gives everyone one shared room.
+
+### The agents
+
+| Agent | What it is | Its job |
+|---|---|---|
+| `@canary-red` | A Claude Code session run by Switch Console | Reads each pull request, runs exploits against the rules it could break, and posts the evidence |
+| `@canary-blue` | A Claude Code session run by Switch Console | Writes the fix and a regression test when Red proves a rule broken |
+| `canary-watch` | A small Node.js script ([`agents/tools/pr-watcher.mjs`](agents/tools/pr-watcher.mjs)) | Checks GitHub every 30 seconds and tells Red about new pull requests and new commits |
+
+Each agent has its own working folder with standing instructions in a `CLAUDE.md` file ([`canary-red.md`](agents/canary-red.md), [`canary-blue.md`](agents/canary-blue.md)). Both accept messages only from their owner and the owner's agents.
+
+### The channel
+
+- **Platform:** Slack, connected through Switch Console. Switch can also connect Microsoft Teams, Discord, and Mattermost, but we have only run Canary on Slack.
+- **Room:** one channel, such as `#canary`, with your team, `@canary-red`, and `@canary-blue` in it.
+- **Memory:** Red keeps every rule and ruling in a room document named `canary-rules`, so they carry over to every future pull request.
+- **Handoffs:** the agents hand work to each other with @mentions in the thread, the same way people do. When a rule breaks, Red asks `@canary-blue` for a fix.
+
+### How to run it
+
+1. Install [Switch Console](https://docs.switchagents.ai) and choose **Add a server → Run a server on this computer**.
+2. Connect Slack in Switch Console, link your own account, make a channel, and invite Switch to it.
+3. Run `node agents/setup-dirs.mjs` to make the two agent folders. In Switch Console, add `canary-red` and `canary-blue`, point each one at its folder, and invite both to the channel.
+4. Write a rule in the channel: `@canary-red rule: A refund can never be more than the original charge.`
+5. Run `node agents/tools/pr-watcher.mjs`, then open a pull request.
+
+The full guide, with every setting and the Slack token for the watcher, is in [agents/README.md](agents/README.md#setup).
 
 ## Tech stack
 
